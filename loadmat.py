@@ -20,7 +20,6 @@ for mat_file in mat_files:
     # Load the MATLAB .mat file
     #mat_dict = scipy.io.loadmat(os.path.join(path, mat_file))
     mat_dict = h5py.File(os.path.join(path, mat_file), 'r')
-
     # Remove meta-keys (those starting with '__') and exclude variables not in the list
     data_vars = {key: np.squeeze(value) for key, value in mat_dict.items() if not key.startswith('__') and key in include_vars}
 
@@ -55,11 +54,11 @@ for mat_file in mat_files:
     ds['lon'].attrs = {'long_name': 'longitude', 'units': 'degrees_east'}
 
     # Calculate precipitation rate
-    pr = ds.pr_accum
+    pr = ds.pr_accum.sum(dim='z')
     pr[1:] = pr[1:].values - pr[:-1].values
     pr.attrs = {'long_name': 'precipitation rate', 'units': 'mm/s'}
     pr.name = 'pr'
-    ds['pr'] = pr
+    ds['pr'] = pr/60.
 
     # Output to NetCDF file
     output_file = os.path.join(path, mat_file.replace('=', '').replace('.mat', '.nc'))

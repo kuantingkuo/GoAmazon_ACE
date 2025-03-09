@@ -21,6 +21,6 @@ qsat=>qsat              401 t,z,x saturation_specific_humidity
 qt=>qt                  401 t,z,x total_specific_humidity
 qv=>qv                  401 t,z,x water_vapor_content
 theta=>theta            401 t,z,x potential_temperature
-theta_e=>thetae        401 t,z,x equivalent_potential_temperature
-pr=>pr                  401 t,z,x precipitation_rate
+theta_e=>thetae         401 t,z,x equivalent_potential_temperature
+pr=>pr                  401   t,x precipitation_rate
 ENDVARS
