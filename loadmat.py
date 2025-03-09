@@ -1,4 +1,4 @@
-#import scipy.io
+import scipy.io
 import xarray as xr
 import os
 import numpy as np
@@ -18,8 +18,13 @@ include_vars = {'tspan', 'z', 'zm', 'B', 'theta_e', 'qt', 'mf', 'theta', 'RH', '
 
 for mat_file in mat_files:
     # Load the MATLAB .mat file
-    #mat_dict = scipy.io.loadmat(os.path.join(path, mat_file))
-    mat_dict = h5py.File(os.path.join(path, mat_file), 'r')
+    print(mat_file)
+    try:
+        mat_dict = h5py.File(os.path.join(path, mat_file), 'r')
+        opened_with_h5py = True
+    except OSError:
+        mat_dict = scipy.io.loadmat(os.path.join(path, mat_file))
+        opened_with_h5py = False
     # Remove meta-keys (those starting with '__') and exclude variables not in the list
     data_vars = {key: np.squeeze(value) for key, value in mat_dict.items() if not key.startswith('__') and key in include_vars}
 
@@ -32,7 +37,10 @@ for mat_file in mat_files:
     for key, value in data_vars.items():
         value = value.squeeze()
         if key == 'mf':
-            data_vars_with_dims[key] = (['lon', 't', 'zm'], value)
+            if opened_with_h5py:
+                data_vars_with_dims[key] = (['lon', 't', 'zm'], value)
+            else:
+                data_vars_with_dims[key] = (['zm', 't', 'lon'], value)
         elif key == 'D':
             data_vars_with_dims['lon'] = (['lon'], value)
         elif key == 'z':
@@ -42,7 +50,10 @@ for mat_file in mat_files:
         elif key == 'tspan':
             data_vars_with_dims['t'] = (['t'], value)
         else:
-            data_vars_with_dims[key] = (['lon', 't', 'z'], value)
+            if opened_with_h5py:
+                data_vars_with_dims[key] = (['lon', 't', 'z'], value)
+            else:
+                data_vars_with_dims[key] = (['z', 't', 'lon'], value)
 
     # Convert to an xarray.Dataset
     ds = xr.Dataset(data_vars_with_dims).transpose('t', 'z', 'zm', 'lon')
@@ -76,4 +87,10 @@ for mat_file in mat_files:
 
     print(f"Dataset for {mat_file} saved to {output_file}")
     print(f"Control file for {mat_file} saved to {ctl_file}")
-    mat_dict.close()
+    if opened_with_h5py:
+        mat_dict.close()
+    else:
+        mat_dict.clear()
+    del ds
+    del data_vars
+    del data_vars_with_dims
